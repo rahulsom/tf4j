@@ -1,0 +1,52 @@
+= Tensorflow for Java Example
+
+This repository is a simple demo of using Tensorflow from Java.
+The current version only works on MacOS.
+That's because I've built my dynamic library on MacOS.
+So if you're running on MacOS, this should work.
+Otherwise, you'll have to do some work to get it to run.
+
+== Running this codebase
+
+. Check out code
+. Run `./gradlew run`
+
+Really, that's it.
+
+== How that works
+
+If you look at the `build.gradle`, you'll see that it has a configuration called `dylibs`.
+That configuration is used to download the JNI dylib for MacOS.
+Once you have the dylib and the jar file (which is a dependency), you can write Tensorflow code in java.
+While my code is in groovy, it should work for any JVM based language.
+
+== What goes into building this
+
+I'm not sure if this is because there's something weird on my laptop, but it took me several hours to build the libs.
+Also it would occasionally get stuck and I would have to kill the build and rebuild it.
+For what it's worth, I tried creating a dockerfile and getting docker hub to build it for me.
+That would time out as well.
+
+* You need to checkout http://github.com/tensorflow/tensorflow[Tensorflow].
+* Then you install https://bazel.build/[bazel] if you don't already have it.
+* Then you run `./configure` and then follow the instructions https://github.com/tensorflow/tensorflow/blob/master/tensorflow/java/README.md[here]
+
+Once you do this for your platform, you'll get the dynamic libraries for your platform.
+
+It would help to upload these to Bintray or MavenCentral so others can benefit from it.
+This is especially relevant since it took me over 2 hours to build for Mac OS.
+
+== What I think of this
+
+I think the build process is not much like what a java developer would expect.
+If Tensorflow wants to help the java community embrace tensorflow, they must do what I've done so far for every platform and upload these dynamic libraries to something like Bintray.
+It might be harder because there are a whole lot of flags that can be used during compilation that affect performance.
+Currently my 4 year old laptop complains that I don't have certain flags enabled during compilation that could improve performance.
+
+As of writing, the python API is very nice.
+The java api is not there yet.
+A good example is how a constant is created in my code right now.
+You can see this in https://github.com/tensorflow/tensorflow/blob/master/tensorflow/java/src/main/java/org/tensorflow/examples/LabelImage.java[their example] too.
+
+**These observations are not complaints.
+I know this is still experimental, and the Tensorflow developers are most likely going to solve these before making it public.**
