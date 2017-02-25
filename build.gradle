@@ -1,38 +1,61 @@
 group 'com.github.rahulsom'
 version '1.0-SNAPSHOT'
 
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'de.undercouch:gradle-download-task:3.2.0'
+  }
+}
+
 apply plugin: 'groovy'
 apply plugin: 'application'
+apply plugin: 'de.undercouch.download'
 
 mainClassName = 'com.github.rahulsom.tf4j.Main'
 applicationDefaultJvmArgs = ["-Djava.library.path=${buildDir}/dylibs"]
 
-configurations {
-  dylibs
-}
-
 repositories {
-  maven {
-    url 'http://dl.bintray.com/rahulsom/m2'
-  }
-  mavenCentral()
+  jcenter()
 }
 
 dependencies {
   compile 'org.codehaus.groovy:groovy-all:2.4.8'
-  compile 'org.tensorflow:libtensorflow:0.12.b6991'
-  dylibs 'org.tensorflow:libtensorflow_jni:0.12.b6991@dylib'
+
+  compile files("${buildDir}/cache/libtensorflow.jar")
+
 }
 
-task downloadJni(type: Copy) {
-  into "${buildDir}/dylibs"
-  from configurations.dylibs
-  rename { a ->
-    def parts = a.split('-')
-    def newName = parts[0] + '.' + parts[1].split('\\.')[-1]
-    println newName
-    newName
+import org.gradle.internal.os.OperatingSystem
+
+task downloadTensorFlow {
+  doLast {
+    def OS = OperatingSystem.current().isMacOsX() ? 'darwin' : OperatingSystem.current().isLinux() ? 'linux' : null
+    if (!OS) {
+      throw new GradleException('OS is neither MacOS nor Linux')
+    }
+    def TF_TYPE = System.getenv('TF_TYPE') ?: 'cpu'
+    def nativeUrl = "https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow_jni-${TF_TYPE}-${OS}-x86_64-1.0.0-PREVIEW1.tar.gz"
+    def jarUrl = 'https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-1.0.0-PREVIEW1.jar'
+
+    download {
+      src nativeUrl
+      dest file("$buildDir/cache/libtensorflow_jni.tar.gz")
+      onlyIfNewer true
+    }
+    file("$buildDir/dylibs").deleteDir()
+    copy {
+      from tarTree(file("$buildDir/cache/libtensorflow_jni.tar.gz"))
+      into file("$buildDir/dylibs")
+    }
+    download {
+      src jarUrl
+      dest file("$buildDir/cache/libtensorflow.jar")
+      onlyIfNewer true
+    }
   }
 }
 
-run.dependsOn 'downloadJni'
+compileJava.dependsOn 'downloadTensorFlow'
